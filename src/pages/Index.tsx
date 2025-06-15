@@ -32,9 +32,9 @@ const Index = () => {
   const [chartData, setChartData] = useState(null);
   const [isListening, setIsListening] = useState(false);
 
-  const { fetchCryptoPrice, fetchTrendingCoins, fetchCryptoHistory }_useCryptoAPI();
-  const { portfolio, addHolding, getPortfolioValue }_usePortfolio();
-  const { speak }_useSpeechSynthesis();
+  const { fetchCryptoPrice, fetchTrendingCoins, fetchCryptoHistory } = useCryptoAPI();
+  const { portfolio, addHolding, getPortfolioValue } = usePortfolio();
+  const { speak } = useSpeechSynthesis();
 
   const addMessage = (type: 'user' | 'bot', content: string, data?: any) => {
     const newMessage: Message = {
