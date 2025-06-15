@@ -9,12 +9,20 @@ interface VoiceInputProps {
   setIsListening: (listening: boolean) => void;
 }
 
+// Add type declarations for Speech Recognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 export const VoiceInput: React.FC<VoiceInputProps> = ({
   onVoiceInput,
   isListening,
   setIsListening
 }) => {
-  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [recognition, setRecognition] = useState<any>(null);
   const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {
@@ -26,23 +34,31 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       recognitionInstance.interimResults = false;
       recognitionInstance.lang = 'en-US';
 
-      recognitionInstance.onresult = (event) => {
+      recognitionInstance.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
+        console.log('Voice input received:', transcript);
         onVoiceInput(transcript);
         setIsListening(false);
       };
 
       recognitionInstance.onend = () => {
+        console.log('Voice recognition ended');
         setIsListening(false);
       };
 
-      recognitionInstance.onerror = (event) => {
+      recognitionInstance.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
       };
 
+      recognitionInstance.onstart = () => {
+        console.log('Voice recognition started');
+      };
+
       setRecognition(recognitionInstance);
       setIsSupported(true);
+    } else {
+      console.log('Speech recognition not supported');
     }
   }, [onVoiceInput, setIsListening]);
 
@@ -50,11 +66,18 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
     if (!recognition) return;
 
     if (isListening) {
+      console.log('Stopping voice recognition');
       recognition.stop();
       setIsListening(false);
     } else {
-      recognition.start();
-      setIsListening(true);
+      console.log('Starting voice recognition');
+      try {
+        recognition.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting voice recognition:', error);
+        setIsListening(false);
+      }
     }
   };
 
@@ -82,11 +105,3 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
     </div>
   );
 };
-
-// Add type declarations for Speech Recognition
-declare global {
-  interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
-  }
-}

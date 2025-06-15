@@ -77,7 +77,7 @@ export const CryptoChart: React.FC<CryptoChartProps> = ({ data, onClose }) => {
                 fontSize={12}
               />
               <Tooltip 
-                formatter={[formatPrice, 'Price']}
+                formatter={(value: number) => [formatPrice(value), 'Price']}
                 labelStyle={{ color: '#1F2937' }}
                 contentStyle={{ 
                   backgroundColor: '#1F2937', 
