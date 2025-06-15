@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useCryptoAPI } from './useCryptoAPI';
 
@@ -30,7 +29,15 @@ export const usePortfolio = () => {
   const getCoinName = (coinId: string) => {
     const coinNames: { [key: string]: { name: string; symbol: string } } = {
       bitcoin: { name: 'Bitcoin', symbol: 'BTC' },
-      ethereum: { name: 'Ethereum', symbol: 'ETH' }
+      ethereum: { name: 'Ethereum', symbol: 'ETH' },
+      litecoin: { name: 'Litecoin', symbol: 'LTC' },
+      cardano: { name: 'Cardano', symbol: 'ADA' },
+      polkadot: { name: 'Polkadot', symbol: 'DOT' },
+      chainlink: { name: 'Chainlink', symbol: 'LINK' },
+      ripple: { name: 'Ripple', symbol: 'XRP' },
+      solana: { name: 'Solana', symbol: 'SOL' },
+      dogecoin: { name: 'Dogecoin', symbol: 'DOGE' },
+      'shiba-inu': { name: 'Shiba Inu', symbol: 'SHIB' }
     };
     return coinNames[coinId] || { name: coinId, symbol: coinId.toUpperCase() };
   };

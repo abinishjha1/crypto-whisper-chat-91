@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 
 const CRYPTOCOMPARE_API_BASE = 'https://min-api.cryptocompare.com/data';
@@ -11,8 +10,24 @@ export const useCryptoAPI = () => {
     const coinMap: { [key: string]: string } = {
       'bitcoin': 'BTC',
       'ethereum': 'ETH',
+      'litecoin': 'LTC',
+      'cardano': 'ADA',
+      'polkadot': 'DOT',
+      'chainlink': 'LINK',
+      'ripple': 'XRP',
+      'solana': 'SOL',
+      'dogecoin': 'DOGE',
+      'shiba-inu': 'SHIB',
       'btc': 'BTC',
-      'eth': 'ETH'
+      'eth': 'ETH',
+      'ltc': 'LTC',
+      'ada': 'ADA',
+      'dot': 'DOT',
+      'link': 'LINK',
+      'xrp': 'XRP',
+      'sol': 'SOL',
+      'doge': 'DOGE',
+      'shib': 'SHIB'
     };
     return coinMap[coinId.toLowerCase()] || coinId.toUpperCase();
   };
@@ -23,6 +38,8 @@ export const useCryptoAPI = () => {
     
     try {
       const symbol = mapCoinSymbol(coinId);
+      console.log(`Fetching price for ${coinId} (${symbol})`);
+      
       const response = await fetch(`${CRYPTOCOMPARE_API_BASE}/pricemultifull?fsyms=${symbol}&tsyms=USD`);
       
       if (!response.ok) {
@@ -30,6 +47,8 @@ export const useCryptoAPI = () => {
       }
       
       const result = await response.json();
+      console.log('API Response:', result);
+      
       const coinData = result.RAW?.[symbol]?.USD;
       
       if (!coinData) {
