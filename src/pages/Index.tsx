@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { ChatInterface } from '@/components/ChatInterface';
 import { VoiceInput } from '@/components/VoiceInput';
@@ -31,9 +32,9 @@ const Index = () => {
   const [chartData, setChartData] = useState(null);
   const [isListening, setIsListening] = useState(false);
 
-  const { fetchCryptoPrice, fetchTrendingCoins, fetchCryptoHistory } = useCryptoAPI();
-  const { portfolio, addHolding, getPortfolioValue } = usePortfolio();
-  const { speak } = useSpeechSynthesis();
+  const { fetchCryptoPrice, fetchTrendingCoins, fetchCryptoHistory }_useCryptoAPI();
+  const { portfolio, addHolding, getPortfolioValue }_usePortfolio();
+  const { speak }_useSpeechSynthesis();
 
   const addMessage = (type: 'user' | 'bot', content: string, data?: any) => {
     const newMessage: Message = {
@@ -72,7 +73,7 @@ const Index = () => {
   };
 
   // Enhanced crypto detection with more coins
-  const detectCryptoCoin = (message: string): { coinId: string, coinName: string } | null => {
+  const detectCryptoCoin = (message: string): { id: string, name: string } | null => {
     const lowerMessage = message.toLowerCase();
     
     const cryptoMap: { [key: string]: { id: string, name: string } } = {
