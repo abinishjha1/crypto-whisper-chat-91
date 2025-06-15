@@ -1,27 +1,36 @@
 
 import { useState } from 'react';
 
-const COINGECKO_API_BASE = 'https://api.coingecko.com/api/v3';
+const COINCAP_API_BASE = 'https://api.coincap.io/v2';
 
 export const useCryptoAPI = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const mapCoinId = (coinId: string) => {
+    const coinMap: { [key: string]: string } = {
+      'bitcoin': 'bitcoin',
+      'ethereum': 'ethereum',
+      'btc': 'bitcoin',
+      'eth': 'ethereum'
+    };
+    return coinMap[coinId.toLowerCase()] || coinId.toLowerCase();
+  };
 
   const fetchCryptoPrice = async (coinId: string) => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch(
-        `${COINGECKO_API_BASE}/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`
-      );
+      const mappedId = mapCoinId(coinId);
+      const response = await fetch(`${COINCAP_API_BASE}/assets/${mappedId}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch crypto price');
       }
       
-      const data = await response.json();
-      const coinData = data[coinId];
+      const result = await response.json();
+      const coinData = result.data;
       
       if (!coinData) {
         throw new Error('Coin not found');
@@ -29,9 +38,9 @@ export const useCryptoAPI = () => {
       
       return {
         id: coinId,
-        current_price: coinData.usd,
-        price_change_percentage_24h: coinData.usd_24h_change,
-        market_cap: coinData.usd_market_cap
+        current_price: parseFloat(coinData.priceUsd),
+        price_change_percentage_24h: parseFloat(coinData.changePercent24Hr),
+        market_cap: parseFloat(coinData.marketCapUsd)
       };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -48,22 +57,20 @@ export const useCryptoAPI = () => {
     setError(null);
     
     try {
-      const response = await fetch(
-        `${COINGECKO_API_BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h`
-      );
+      const response = await fetch(`${COINCAP_API_BASE}/assets?limit=10`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch trending coins');
       }
       
-      const data = await response.json();
-      return data.map((coin: any) => ({
+      const result = await response.json();
+      return result.data.map((coin: any) => ({
         id: coin.id,
         name: coin.name,
         symbol: coin.symbol,
-        current_price: coin.current_price,
-        price_change_percentage_24h: coin.price_change_percentage_24h,
-        market_cap: coin.market_cap
+        current_price: parseFloat(coin.priceUsd),
+        price_change_percentage_24h: parseFloat(coin.changePercent24Hr),
+        market_cap: parseFloat(coin.marketCapUsd)
       }));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -80,16 +87,25 @@ export const useCryptoAPI = () => {
     setError(null);
     
     try {
+      const mappedId = mapCoinId(coinId);
+      const interval = 'd1'; // daily intervals
+      const end = Date.now();
+      const start = end - (days * 24 * 60 * 60 * 1000);
+      
       const response = await fetch(
-        `${COINGECKO_API_BASE}/coins/${coinId}/market_chart?vs_currency=usd&days=${days}&interval=daily`
+        `${COINCAP_API_BASE}/assets/${mappedId}/history?interval=${interval}&start=${start}&end=${end}`
       );
       
       if (!response.ok) {
         throw new Error('Failed to fetch crypto history');
       }
       
-      const data = await response.json();
-      return data.prices; // Array of [timestamp, price]
+      const result = await response.json();
+      // Convert to format expected by chart: [timestamp, price]
+      return result.data.map((item: any) => [
+        item.time,
+        parseFloat(item.priceUsd)
+      ]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
