@@ -7,8 +7,6 @@ interface VoiceInputProps {
   onVoiceInput: (transcript: string) => void;
   isListening: boolean;
   setIsListening: (listening: boolean) => void;
-  currentTranscript: string;
-  setCurrentTranscript: (transcript: string) => void;
 }
 
 // Add type declarations for Speech Recognition
@@ -22,9 +20,7 @@ declare global {
 export const VoiceInput: React.FC<VoiceInputProps> = ({
   onVoiceInput,
   isListening,
-  setIsListening,
-  currentTranscript,
-  setCurrentTranscript
+  setIsListening
 }) => {
   const [recognition, setRecognition] = useState<any>(null);
   const [isSupported, setIsSupported] = useState(false);
@@ -34,47 +30,28 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
       
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
+      recognitionInstance.continuous = false;
+      recognitionInstance.interimResults = false;
       recognitionInstance.lang = 'en-US';
 
       recognitionInstance.onresult = (event: any) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-
-        // Show live transcription
-        const currentText = finalTranscript || interimTranscript;
-        setCurrentTranscript(currentText);
-        console.log('Live transcript:', currentText);
+        const transcript = event.results[0][0].transcript;
+        console.log('Voice transcript:', transcript);
+        onVoiceInput(transcript);
       };
 
       recognitionInstance.onend = () => {
         console.log('Voice recognition ended');
-        if (currentTranscript.trim()) {
-          onVoiceInput(currentTranscript);
-        }
         setIsListening(false);
-        setCurrentTranscript('');
       };
 
       recognitionInstance.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
-        setCurrentTranscript('');
       };
 
       recognitionInstance.onstart = () => {
         console.log('Voice recognition started');
-        setCurrentTranscript('');
       };
 
       setRecognition(recognitionInstance);
@@ -82,7 +59,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
     } else {
       console.log('Speech recognition not supported');
     }
-  }, [onVoiceInput, setIsListening, currentTranscript, setCurrentTranscript]);
+  }, [onVoiceInput, setIsListening]);
 
   const toggleListening = () => {
     if (!recognition) return;
@@ -109,16 +86,6 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
 
   return (
     <div className="flex flex-col items-center mt-4 space-y-3">
-      {/* Live Transcript Display */}
-      {isListening && (
-        <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-4 py-2 min-h-[50px] max-w-md">
-          <div className="text-sm text-gray-300 mb-1">Listening...</div>
-          <div className="text-white min-h-[20px]">
-            {currentTranscript || <span className="text-gray-400 italic">Start speaking...</span>}
-          </div>
-        </div>
-      )}
-      
       {/* Microphone Button */}
       <Button
         onClick={toggleListening}
@@ -138,7 +105,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
       
       {isListening && (
         <div className="text-xs text-gray-400 text-center">
-          Click microphone or stop speaking to process command
+          Listening... Speak now
         </div>
       )}
     </div>

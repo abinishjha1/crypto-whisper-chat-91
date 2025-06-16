@@ -30,7 +30,6 @@ const Index = () => {
   const [showChart, setShowChart] = useState(false);
   const [chartData, setChartData] = useState(null);
   const [isListening, setIsListening] = useState(false);
-  const [currentTranscript, setCurrentTranscript] = useState('');
 
   const { fetchCryptoPrice, fetchTrendingCoins, fetchCryptoHistory } = useCryptoAPI();
   const { portfolio, addHolding, getPortfolioValue } = usePortfolio();
@@ -273,8 +272,6 @@ const Index = () => {
             onVoiceInput={handleVoiceInput}
             isListening={isListening}
             setIsListening={setIsListening}
-            currentTranscript={currentTranscript}
-            setCurrentTranscript={setCurrentTranscript}
           />
         </div>
 
