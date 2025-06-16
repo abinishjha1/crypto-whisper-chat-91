@@ -1,35 +1,36 @@
+
 import { useState } from 'react';
 
-const CRYPTOCOMPARE_API_BASE = 'https://min-api.cryptocompare.com/data';
+const COINGECKO_API_BASE = 'https://api.coingecko.com/api/v3';
 
 export const useCryptoAPI = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const mapCoinSymbol = (coinId: string) => {
+  const mapCoinId = (coinId: string) => {
     const coinMap: { [key: string]: string } = {
-      'bitcoin': 'BTC',
-      'ethereum': 'ETH',
-      'litecoin': 'LTC',
-      'cardano': 'ADA',
-      'polkadot': 'DOT',
-      'chainlink': 'LINK',
-      'ripple': 'XRP',
-      'solana': 'SOL',
-      'dogecoin': 'DOGE',
-      'shiba-inu': 'SHIB',
-      'btc': 'BTC',
-      'eth': 'ETH',
-      'ltc': 'LTC',
-      'ada': 'ADA',
-      'dot': 'DOT',
-      'link': 'LINK',
-      'xrp': 'XRP',
-      'sol': 'SOL',
-      'doge': 'DOGE',
-      'shib': 'SHIB'
+      'bitcoin': 'bitcoin',
+      'btc': 'bitcoin',
+      'ethereum': 'ethereum',
+      'eth': 'ethereum',
+      'litecoin': 'litecoin',
+      'ltc': 'litecoin',
+      'cardano': 'cardano',
+      'ada': 'cardano',
+      'polkadot': 'polkadot',
+      'dot': 'polkadot',
+      'chainlink': 'chainlink',
+      'link': 'chainlink',
+      'ripple': 'ripple',
+      'xrp': 'ripple',
+      'solana': 'solana',
+      'sol': 'solana',
+      'dogecoin': 'dogecoin',
+      'doge': 'dogecoin',
+      'shiba-inu': 'shiba-inu',
+      'shib': 'shiba-inu'
     };
-    return coinMap[coinId.toLowerCase()] || coinId.toUpperCase();
+    return coinMap[coinId.toLowerCase()] || coinId.toLowerCase();
   };
 
   const fetchCryptoPrice = async (coinId: string) => {
@@ -37,10 +38,12 @@ export const useCryptoAPI = () => {
     setError(null);
     
     try {
-      const symbol = mapCoinSymbol(coinId);
-      console.log(`Fetching price for ${coinId} (${symbol})`);
+      const mappedId = mapCoinId(coinId);
+      console.log(`Fetching price for ${coinId} (${mappedId})`);
       
-      const response = await fetch(`${CRYPTOCOMPARE_API_BASE}/pricemultifull?fsyms=${symbol}&tsyms=USD`);
+      const response = await fetch(
+        `${COINGECKO_API_BASE}/simple/price?ids=${mappedId}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`
+      );
       
       if (!response.ok) {
         throw new Error('Failed to fetch crypto price');
@@ -49,7 +52,7 @@ export const useCryptoAPI = () => {
       const result = await response.json();
       console.log('API Response:', result);
       
-      const coinData = result.RAW?.[symbol]?.USD;
+      const coinData = result[mappedId];
       
       if (!coinData) {
         throw new Error('Coin not found');
@@ -57,9 +60,9 @@ export const useCryptoAPI = () => {
       
       return {
         id: coinId,
-        current_price: coinData.PRICE,
-        price_change_percentage_24h: coinData.CHANGEPCT24HOUR,
-        market_cap: coinData.MKTCAP
+        current_price: coinData.usd,
+        price_change_percentage_24h: coinData.usd_24h_change,
+        market_cap: coinData.usd_market_cap
       };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -76,20 +79,20 @@ export const useCryptoAPI = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${CRYPTOCOMPARE_API_BASE}/top/mktcapfull?limit=10&tsym=USD`);
+      const response = await fetch(`${COINGECKO_API_BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch trending coins');
       }
       
       const result = await response.json();
-      return result.Data.map((coin: any) => ({
-        id: coin.CoinInfo.Name.toLowerCase(),
-        name: coin.CoinInfo.FullName,
-        symbol: coin.CoinInfo.Name,
-        current_price: coin.RAW?.USD?.PRICE || 0,
-        price_change_percentage_24h: coin.RAW?.USD?.CHANGEPCT24HOUR || 0,
-        market_cap: coin.RAW?.USD?.MKTCAP || 0
+      return result.map((coin: any) => ({
+        id: coin.id,
+        name: coin.name,
+        symbol: coin.symbol.toUpperCase(),
+        current_price: coin.current_price,
+        price_change_percentage_24h: coin.price_change_percentage_24h,
+        market_cap: coin.market_cap
       }));
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -101,26 +104,38 @@ export const useCryptoAPI = () => {
     }
   };
 
-  const fetchCryptoHistory = async (coinId: string, days: number = 7) => {
+  const fetchCryptoHistory = async (coinId: string, timeframe: string = '7') => {
     setLoading(true);
     setError(null);
     
     try {
-      const symbol = mapCoinSymbol(coinId);
-      const response = await fetch(
-        `${CRYPTOCOMPARE_API_BASE}/v2/histoday?fsym=${symbol}&tsym=USD&limit=${days}`
-      );
+      const mappedId = mapCoinId(coinId);
+      
+      // Map timeframes to CoinGecko API parameters
+      const timeframeMap: { [key: string]: { days: string, interval?: string } } = {
+        '1': { days: '1', interval: 'hourly' },
+        '3': { days: '3', interval: 'hourly' },
+        '7': { days: '7' },
+        '30': { days: '30' },
+        '365': { days: '365' }
+      };
+      
+      const params = timeframeMap[timeframe] || { days: '7' };
+      let url = `${COINGECKO_API_BASE}/coins/${mappedId}/market_chart?vs_currency=usd&days=${params.days}`;
+      
+      if (params.interval) {
+        url += `&interval=${params.interval}`;
+      }
+      
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error('Failed to fetch crypto history');
       }
       
       const result = await response.json();
-      // Convert to format expected by chart: [timestamp, price]
-      return result.Data.Data.map((item: any) => [
-        item.time * 1000, // Convert to milliseconds
-        item.close
-      ]);
+      // CoinGecko returns prices as [timestamp, price] arrays
+      return result.prices;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);

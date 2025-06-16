@@ -132,25 +132,25 @@ const Index = () => {
         const data = await fetchTrendingCoins();
         if (data && data.length > 0) {
           const trendingList = data.slice(0, 5).map((coin: any) => 
-            `${coin.name} (${coin.symbol.toUpperCase()}): $${coin.current_price.toLocaleString()}`
+            `${coin.name} (${coin.symbol}): $${coin.current_price.toLocaleString()}`
           ).join('\n');
           addMessage('bot', `Here are the top trending cryptocurrencies:\n\n${trendingList}`, data);
         }
       }
       // Check for chart requests
-      else if (lowerMessage.includes('chart')) {
+      else if (lowerMessage.includes('chart') || lowerMessage.includes('graph')) {
         const coin = detectCryptoCoin(message);
         if (coin) {
-          const data = await fetchCryptoHistory(coin.id);
+          const data = await fetchCryptoHistory(coin.id, '7');
           if (data) {
-            setChartData({ coin: coin.name, data });
+            setChartData({ coin: coin.name, coinId: coin.id, data });
             setShowChart(true);
-            addMessage('bot', `Here's the ${coin.name} price chart for the last 7 days!`);
+            addMessage('bot', `Here's the ${coin.name} price chart! You can switch between different timeframes (1D, 3D, 7D, 1M, 1Y) using the buttons in the chart.`);
           } else {
             addMessage('bot', `Sorry, I couldn't fetch the chart data for ${coin.name}.`);
           }
         } else {
-          addMessage('bot', 'Please specify which cryptocurrency chart you\'d like to see.');
+          addMessage('bot', 'Please specify which cryptocurrency chart you\'d like to see. For example: "Show Bitcoin chart" or "ETH graph"');
         }
       }
       // Check for portfolio queries
@@ -210,7 +210,7 @@ const Index = () => {
       }
       // Default response
       else {
-        addMessage('bot', 'I can help you with crypto prices, trending coins, portfolio tracking, and price charts. Try asking: "What\'s Bitcoin\'s price?", "Show trending cryptos", "I have 1 BTC", "Show Bitcoin chart", or ask about other cryptocurrencies like Ethereum, Litecoin, Cardano, Solana, and more!');
+        addMessage('bot', 'I can help you with crypto prices, trending coins, portfolio tracking, and interactive price charts with multiple timeframes. Try asking: "What\'s Bitcoin\'s price?", "Show trending cryptos", "I have 1 BTC", "Show Bitcoin chart", or ask about other cryptocurrencies like Ethereum, Litecoin, Cardano, Solana, and more!');
       }
     } catch (error) {
       console.error('Error processing message:', error);
