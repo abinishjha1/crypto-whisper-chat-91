@@ -1,6 +1,8 @@
 
 import { useState } from 'react';
 
+// Using a CORS proxy for CoinGecko API to avoid CORS issues
+const PROXY_URL = 'https://api.allorigins.win/raw?url=';
 const COINGECKO_API_BASE = 'https://api.coingecko.com/api/v3';
 
 export const useCryptoAPI = () => {
@@ -33,6 +35,24 @@ export const useCryptoAPI = () => {
     return coinMap[coinId.toLowerCase()] || coinId.toLowerCase();
   };
 
+  const makeAPICall = async (url: string) => {
+    const proxyUrl = `${PROXY_URL}${encodeURIComponent(url)}`;
+    console.log('Making API call to:', proxyUrl);
+    
+    const response = await fetch(proxyUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  };
+
   const fetchCryptoPrice = async (coinId: string) => {
     setLoading(true);
     setError(null);
@@ -41,15 +61,9 @@ export const useCryptoAPI = () => {
       const mappedId = mapCoinId(coinId);
       console.log(`Fetching price for ${coinId} (${mappedId})`);
       
-      const response = await fetch(
-        `${COINGECKO_API_BASE}/simple/price?ids=${mappedId}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`
-      );
+      const url = `${COINGECKO_API_BASE}/simple/price?ids=${mappedId}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true`;
+      const result = await makeAPICall(url);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch crypto price');
-      }
-      
-      const result = await response.json();
       console.log('API Response:', result);
       
       const coinData = result[mappedId];
@@ -79,13 +93,9 @@ export const useCryptoAPI = () => {
     setError(null);
     
     try {
-      const response = await fetch(`${COINGECKO_API_BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1`);
+      const url = `${COINGECKO_API_BASE}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1`;
+      const result = await makeAPICall(url);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch trending coins');
-      }
-      
-      const result = await response.json();
       return result.map((coin: any) => ({
         id: coin.id,
         name: coin.name,
@@ -127,13 +137,8 @@ export const useCryptoAPI = () => {
         url += `&interval=${params.interval}`;
       }
       
-      const response = await fetch(url);
+      const result = await makeAPICall(url);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch crypto history');
-      }
-      
-      const result = await response.json();
       // CoinGecko returns prices as [timestamp, price] arrays
       return result.prices;
     } catch (err) {

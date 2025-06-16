@@ -6,6 +6,7 @@ import { CryptoChart } from '@/components/CryptoChart';
 import { useCryptoAPI } from '@/hooks/useCryptoAPI';
 import { usePortfolio } from '@/hooks/usePortfolio';
 import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis';
+import { useToast } from '@/hooks/use-toast';
 import { MessageCircle, TrendingUp } from 'lucide-react';
 
 export interface Message {
@@ -34,6 +35,7 @@ const Index = () => {
   const { fetchCryptoPrice, fetchTrendingCoins, fetchCryptoHistory } = useCryptoAPI();
   const { portfolio, addHolding, getPortfolioValue } = usePortfolio();
   const { speak } = useSpeechSynthesis();
+  const { toast } = useToast();
 
   const addMessage = (type: 'user' | 'bot', content: string, data?: any) => {
     const newMessage: Message = {
@@ -120,8 +122,18 @@ const Index = () => {
           if (data) {
             const response = `${coin.name} is trading at $${data.current_price.toLocaleString()} with a 24h change of ${data.price_change_percentage_24h > 0 ? '+' : ''}${data.price_change_percentage_24h.toFixed(2)}%`;
             addMessage('bot', response, data);
+            toast({
+              title: "Price Updated",
+              description: `Successfully fetched ${coin.name} price data`,
+            });
           } else {
-            addMessage('bot', `Sorry, I couldn't fetch the price for ${coin.name}. Please try again.`);
+            const errorMsg = `Sorry, I couldn't fetch the price for ${coin.name}. The API might be temporarily unavailable.`;
+            addMessage('bot', errorMsg);
+            toast({
+              title: "API Error",
+              description: "Unable to fetch crypto price data",
+              variant: "destructive",
+            });
           }
         } else {
           addMessage('bot', 'Please specify which cryptocurrency you\'d like to know the price of. I support Bitcoin, Ethereum, Litecoin, Cardano, Polkadot, Chainlink, Ripple, Solana, Dogecoin, and Shiba Inu.');
@@ -135,6 +147,17 @@ const Index = () => {
             `${coin.name} (${coin.symbol}): $${coin.current_price.toLocaleString()}`
           ).join('\n');
           addMessage('bot', `Here are the top trending cryptocurrencies:\n\n${trendingList}`, data);
+          toast({
+            title: "Trending Data Loaded",
+            description: "Successfully fetched top cryptocurrencies",
+          });
+        } else {
+          addMessage('bot', 'Sorry, I couldn\'t fetch trending coins data right now. Please try again.');
+          toast({
+            title: "API Error",
+            description: "Unable to fetch trending coins data",
+            variant: "destructive",
+          });
         }
       }
       // Check for chart requests
@@ -146,8 +169,18 @@ const Index = () => {
             setChartData({ coin: coin.name, coinId: coin.id, data });
             setShowChart(true);
             addMessage('bot', `Here's the ${coin.name} price chart! You can switch between different timeframes (1D, 3D, 7D, 1M, 1Y) using the buttons in the chart.`);
+            toast({
+              title: "Chart Loaded",
+              description: `${coin.name} price chart is now displayed`,
+            });
           } else {
-            addMessage('bot', `Sorry, I couldn't fetch the chart data for ${coin.name}.`);
+            const errorMsg = `Sorry, I couldn't fetch the chart data for ${coin.name}. The API might be temporarily unavailable.`;
+            addMessage('bot', errorMsg);
+            toast({
+              title: "Chart Error",
+              description: "Unable to load chart data",
+              variant: "destructive",
+            });
           }
         } else {
           addMessage('bot', 'Please specify which cryptocurrency chart you\'d like to see. For example: "Show Bitcoin chart" or "ETH graph"');
@@ -215,6 +248,11 @@ const Index = () => {
     } catch (error) {
       console.error('Error processing message:', error);
       addMessage('bot', 'Sorry, I encountered an error while processing your request. Please try again in a moment.');
+      toast({
+        title: "Processing Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     }
 
     setIsThinking(false);
